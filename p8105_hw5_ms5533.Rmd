@@ -6,12 +6,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  fig.width = 6,
-  fig.asp = .6,
-  out.width = "90%"
-)
+knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(rvest)
@@ -19,3 +14,76 @@ library(rvest)
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 ```
 
+## Problem 1
+
+Make a dataframe that contains control and experimental data from longitudinal study.  
+Each participant is in its own file.  
+Want in df: subject ID, arm, observations over time. 
+
+#### Data import
+
+```{r, collapse=TRUE, message=FALSE}
+# dataframe containing all file names (list.files)
+file_names_df = tibble(
+  file_names = list.files(path = "./data/problem_1"))
+
+# function to read csv files
+
+read_data <- function(file_name) {
+  
+  read_csv(paste0("data/problem_1/", file_name))
+  
+}
+
+# data frame with nested results from each file 
+study_data_import = 
+  file_names_df %>% 
+  mutate(
+    study_data = map(file_names_df$file_names, read_data))
+```
+
+#### Tidy results 
+
+```{r, collapse=TRUE}
+# unnest, transform to long format, separate file names into study arm and subject ID
+study_data_tidy = 
+  study_data_import %>% 
+  unnest() %>% 
+  gather(key = week, value = observation, week_1:week_8) %>% 
+  separate(file_names, into = c("study_arm", "subject_id"), sep = "\\_") %>% 
+  mutate(
+    subject_id = str_replace(subject_id, "\\.csv", ""),
+    subject_id = str_remove(subject_id, "^0+"), 
+    week = str_replace(week, "\\week_", "")) 
+
+study_data_tidy
+
+# version 2 - keeps study arm and subject ID together
+study_data_tidy_2 = 
+  study_data_import %>% 
+  unnest() %>% 
+  gather(key = week, value = observation, week_1:week_8) %>% 
+  rename(subject_id =  file_names) %>% 
+  mutate(
+    subject_id = str_replace(subject_id, "\\.csv", ""),
+    week = str_replace(week, "\\week_", "")) 
+
+study_data_tidy_2
+```
+
+#### Plot participant's observations overtime 
+
+```{r, collapse=TRUE}
+# spaghetti plot showing obs on each subject over time, comment on differences 
+study_data_tidy_2 %>% 
+  ggplot(aes(x = week, y = observation, color = subject_id, group = subject_id)) + 
+  geom_line() +
+  labs(
+    title = "Observations Over 8 Weeks", 
+    x = "Week", 
+    y = "Observation", 
+    color = "Participant") + 
+  viridis::scale_color_viridis(discrete = TRUE)
+```
+
+## Problem 2
