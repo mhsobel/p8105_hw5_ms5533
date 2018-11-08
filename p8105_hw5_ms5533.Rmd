@@ -16,9 +16,7 @@ theme_set(theme_bw() + theme(legend.position = "bottom"))
 
 ## Problem 1
 
-Make a dataframe that contains control and experimental data from longitudinal study.  
-Each participant is in its own file.  
-Want in df: subject ID, arm, observations over time. 
+Make a dataframe that contains control and experimental data from longitudinal study. Each participant is in its own file. Want in data frame: subject ID, arm, observations over time. 
 
 #### Data import
 
@@ -84,6 +82,12 @@ study_data_tidy_2 %>%
     y = "Observation", 
     color = "Participant") + 
   viridis::scale_color_viridis(discrete = TRUE)
+# could not figure out how to make plot with separate study arm and subject ID
+# they seem to need to go together as one does not exist without the other
 ```
 
 ## Problem 2
+
+The *Washington Post* has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository [here](https://github.com/washingtonpost/data-homicides). You can read their accompanying article [here](https://www.washingtonpost.com/graphics/2018/investigations/where-murders-go-unsolved/). 
+
+
