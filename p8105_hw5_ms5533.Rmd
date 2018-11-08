@@ -98,27 +98,78 @@ wp_homicide_data =
     city_state = str_c(city, state, sep = ", "))
 
 # total number of homicides per city
-wp_homicide_data %>% 
+homicide_tot_df = 
+  wp_homicide_data %>% 
   group_by(city_state) %>% 
-  summarise(number_homicides = n_distinct(uid))
+  summarise(homicide_tot = n()) 
+
+homicide_tot_df
 
 # number of unsolved homicides per city
-wp_homicide_data %>% 
+homicide_unsolved_df = 
+  wp_homicide_data %>% 
   group_by(city_state) %>% 
   filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% 
-  summarise(number_homicides_unsolved = n_distinct(uid))
+  summarise(unsolved = n()) 
+
+homicide_unsolved_df
 ```
 
 #### Estimate the proportion of homicides that are unsolved in Baltimore, MD
 
-```{r, eval=FALSE}
-wp_homicide_data %>% 
-  filter(city_state == "Baltimore, MD") %>% 
-  mutate(
-    unsolved = ifelse(disposition == "Closed without arrest" | disposition == "Open/No arrest", 
-                    TRUE, FALSE)) %>% 
-  select(unsolved) %>% 
-  prop.test(unsolved)
+```{r, collapse=TRUE}
+# Baltimore, MD total homicide
+bmd_tot = 
+  wp_homicide_data %>% 
+  group_by(city_state) %>% 
+  summarise(total = n()) %>% 
+  filter(city_state == "Baltimore, MD")
+
+# Baltimore, MD unsolved homicide
+bmd_unsolv = 
+  wp_homicide_data %>% 
+  group_by(city_state) %>% 
+  filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% 
+  summarise(unsolved = n()) %>% 
+  filter(city_state == "Baltimore, MD")
+
+# join Baltimore, MD total and unsolved homicides
+baltimore = inner_join(bmd_tot, bmd_unsolv, by = "city_state")
+
+# proportion test (null = proportions in different groups are the same)
+prop.test(baltimore$unsolved, baltimore$total) %>% 
+  broom::tidy() %>% 
+  select(estimate, conf.low, conf.high) %>% 
+  knitr::kable(digits = 3)
 ```
 
+#### Estimate the proportion of homicides that are unsolved in all cities
+
+```{r, collapse=TRUE}
+# join all cities total and unsolved homicides
+all_cities = inner_join(homicide_tot_df, homicide_unsolved_df, by = "city_state")
+
+# write prop.test function
+prop_test_city = function(unsolved, homicide_tot) {
+  
+  prop.test(unsolved, homicide_tot) %>% 
+    broom::tidy() %>% 
+    select(estimate, conf.low, conf.high)
+  
+}
+
+# iterating prop.test function over all cities using map2 - 2 inputs
+all_cities = 
+  all_cities %>% 
+  mutate(prop_city = map2(all_cities$unsolved, all_cities$homicide_tot, prop_test_city)) %>% 
+  unnest()
+
+all_cities
+```
+
+#### Plot: Estimates and CIs for each city for the proportion of homicides that are unsolved
+
+```{r}
+
+```
 
