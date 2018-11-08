@@ -52,42 +52,39 @@ study_data_tidy =
   mutate(
     subject_id = str_replace(subject_id, "\\.csv", ""),
     subject_id = str_remove(subject_id, "^0+"), 
-    week = str_replace(week, "\\week_", "")) 
+    week = str_replace(week, "\\week_", ""), 
+    study_arm = recode(study_arm, con = "control", exp = "experimental")) 
 
 study_data_tidy
-
-# version 2 - keeps study arm and subject ID together
-study_data_tidy_2 = 
-  study_data_import %>% 
-  unnest() %>% 
-  gather(key = week, value = observation, week_1:week_8) %>% 
-  rename(subject_id =  file_names) %>% 
-  mutate(
-    subject_id = str_replace(subject_id, "\\.csv", ""),
-    week = str_replace(week, "\\week_", "")) 
-
-study_data_tidy_2
 ```
 
 #### Plot participant's observations overtime 
 
 ```{r, collapse=TRUE}
 # spaghetti plot showing obs on each subject over time, comment on differences 
-study_data_tidy_2 %>% 
+study_data_tidy %>% 
   ggplot(aes(x = week, y = observation, color = subject_id, group = subject_id)) + 
   geom_line() +
+  facet_grid(~study_arm) +
   labs(
     title = "Observations Over 8 Weeks", 
     x = "Week", 
     y = "Observation", 
     color = "Participant") + 
   viridis::scale_color_viridis(discrete = TRUE)
-# could not figure out how to make plot with separate study arm and subject ID
-# they seem to need to go together as one does not exist without the other
 ```
 
 ## Problem 2
 
 The *Washington Post* has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository [here](https://github.com/washingtonpost/data-homicides). You can read their accompanying article [here](https://www.washingtonpost.com/graphics/2018/investigations/where-murders-go-unsolved/). 
+
+#### Data import
+
+```{r}
+wp_homicide_data = read_csv("./data/data-homicides-master/homicide-data.csv")
+```
+
+
+
 
 
