@@ -80,11 +80,45 @@ The *Washington Post* has gathered data on homicides in 50 large U.S. cities and
 
 #### Data import
 
-```{r}
-wp_homicide_data = read_csv("./data/data-homicides-master/homicide-data.csv")
+```{r, collapse=TRUE}
+# read in csv
+wp_homicide_data = 
+  read_csv("./data/data-homicides-master/homicide-data.csv")
 ```
 
+The dataset pulled from the *Washington Post* has **`r nrow(wp_homicide_data)`** observations across **`r ncol(wp_homicide_data)`** variables that include information about the victim (name, race, age, sex), the reported date of the homicide, and the city and location of the homicide. 
 
+#### Number of homicies per city & Number of unsolved homicides per city
 
+```{r, collapse=TRUE}
+# create "city_state" variable
+wp_homicide_data = 
+  wp_homicide_data %>% 
+  mutate(
+    city_state = str_c(city, state, sep = ", "))
+
+# total number of homicides per city
+wp_homicide_data %>% 
+  group_by(city_state) %>% 
+  summarise(number_homicides = n_distinct(uid))
+
+# number of unsolved homicides per city
+wp_homicide_data %>% 
+  group_by(city_state) %>% 
+  filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% 
+  summarise(number_homicides_unsolved = n_distinct(uid))
+```
+
+#### Estimate the proportion of homicides that are unsolved in Baltimore, MD
+
+```{r, eval=FALSE}
+wp_homicide_data %>% 
+  filter(city_state == "Baltimore, MD") %>% 
+  mutate(
+    unsolved = ifelse(disposition == "Closed without arrest" | disposition == "Open/No arrest", 
+                    TRUE, FALSE)) %>% 
+  select(unsolved) %>% 
+  prop.test(unsolved)
+```
 
 
